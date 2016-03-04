@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+</head>
+
+<body>
+
+<canvas id="gameCanvas" width="800" height="600" style="border:2px solid black"></canvas>
+<script src="seedrandom.min.js"></script>
+<script>
+var canvas = document.getElementById("gameCanvas");
+var canvasContext = canvas.getContext('2d');
+
+var GameGrid = [];
+
+//Tweak variables from here
+//Canvas size - 800:600
+var BlockSize = 20;
+var Rooms = 10;
+
+var sizeColMin = 4;
+var sizeColMax = 7;
+var sizeRowMin = 4;
+var sizeRowMax = 7;
+
+var distBetweenRoomsMin = 7;
+var distBetweenRoomsMax = 11;
+//Up to here
+
+var FIELD_C = canvas.width/BlockSize;
+var FIELD_R = canvas.height/BlockSize;
+
+for (var c=0; c<FIELD_C; c++) {
+	GameGrid[c] = [];
+	for (var r=0; r<FIELD_R; r++) {
+		GameGrid[c][r]={x:0,y:0,value:0};
+		GameGrid[c][r].x = c*BlockSize;
+		GameGrid[c][r].y = r*BlockSize;
+	}
+}
+
+var RoomsCreated = [];
+var RoomsPlaced = [];
+
+function createRoom() {
+	var rWidth = sizeColMin + Math.floor(Math.random()*(sizeColMax - sizeColMin+1));
+	var rHeight = sizeRowMin + Math.floor(Math.random()*(sizeRowMax - sizeRowMin+1));
+
+	var xPos = (rWidth%2)/2;
+	var yPos = (rHeight%2)/2;
+
+	RoomsCreated.push({centerX:xPos,centerY:yPos,roomWidth:rWidth,roomHeight:rHeight});
+}
+for (var i=0; i<Rooms; i++) {
+	createRoom();
+}
+placeRoomDefault();
+for (var i=1; i<Rooms; i++) {
+	findPlace(i);
+}
+
+function placeRoomDefault() {
+	var xPosition = Math.floor((Math.random()+Math.random())/2*(FIELD_C-RoomsCreated[0].roomWidth))+RoomsCreated[0].roomWidth/2;
+	var yPosition = Math.floor((Math.random()+Math.random())/2*(FIELD_R-RoomsCreated[0].roomHeight))+RoomsCreated[0].roomHeight/2;
+
+	RoomsCreated[0].centerX = xPosition;
+	RoomsCreated[0].centerY = yPosition;
+
+	RoomsPlaced.push(RoomsCreated[0]);
+
+	for (var i=xPosition-RoomsCreated[0].roomWidth/2; i<xPosition+RoomsCreated[0].roomWidth/2; i++){
+		for (var j=yPosition-RoomsCreated[0].roomHeight/2; j<yPosition+RoomsCreated[0].roomHeight/2; j++){
+			GameGrid[i][j].value = 2;
+		}
+	}
+}
+
+function placeRoom(x,y,n) {
+	//findPlace(n);
+	RoomsPlaced.push(RoomsCreated[n]);
+	for (var i=x-RoomsCreated[n].roomWidth/2; i<x+RoomsCreated[n].roomWidth/2; i++){
+		for (var j=y-RoomsCreated[n].roomHeight/2; j<y+RoomsCreated[n].roomHeight/2; j++){
+			GameGrid[i][j].value = 2;
+		}
+	}
+}
+
+function findPlace(n) {
+	var xPosition = Math.floor((Math.random()+Math.random())/2*(FIELD_C-RoomsCreated[n].roomWidth))+RoomsCreated[n].roomWidth/2;
+	var yPosition = Math.floor((Math.random()+Math.random())/2*(FIELD_R-RoomsCreated[n].roomHeight))+RoomsCreated[n].roomHeight/2;
+
+	RoomsCreated[n].centerX = xPosition;
+	RoomsCreated[n].centerY = yPosition;
+
+	var placed = false;
+	var fromOther = true;
+
+	for (var k=0; k<RoomsPlaced.length; k++) {
+		for (var d=0; d<RoomsPlaced.length; d++) {
+			if (distance(xPosition,yPosition,d)<distBetweenRoomsMin) {
+				fromOther = false;
+			}
+		}
+		if (fromOther && distance(xPosition,yPosition,k)<distBetweenRoomsMax && distance(xPosition,yPosition,k)>distBetweenRoomsMin) {
+			placeRoom(xPosition,yPosition,n);
+			placed = true;
+		}
+	}
+	if (!placed) {
+		findPlace(n);
+	}
+}
+
+function distance(x,y,k) {
+	var xDist = Math.abs(x-RoomsCreated[k].centerX);
+	var yDist = Math.abs(y-RoomsCreated[k].centerY);
+	return Math.sqrt(xDist*xDist+yDist*yDist);
+}
+
+
+draw();
+
+function draw() {
+	for (var c=0; c<FIELD_C; c++) {
+		for (var r=0; r<FIELD_R; r++) {
+			if (GameGrid[c][r].value == 0) {
+				canvasContext.fillStyle = "black";
+			}
+			if (GameGrid[c][r].value == 1) {
+				canvasContext.fillStyle = "white";
+			}
+			if (GameGrid[c][r].value == 2) {
+				canvasContext.fillStyle = "green";
+			}
+			canvasContext.fillRect(GameGrid[c][r].x,GameGrid[c][r].y,BlockSize,BlockSize);
+		}
+	}
+}
+
+
+</script>
+
+</body>
+</html>
